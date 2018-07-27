@@ -8,14 +8,20 @@ from ndicapy import (
 
 MAX_SERIAL_PORTS = 20
 if __name__ == '__main__':
-    name = ''
-    for port_no in range(MAX_SERIAL_PORTS):
-        name = ndiDeviceName(port_no)
-        if not name:
-            continue
+    import sys
+
+    if len(sys.argv) > 1:
+        name = sys.argv[1]
         result = ndiProbe(name)
-        if result == NDI_OKAY:
-            break
+    else:
+        name = ""
+        for port_no in range(MAX_SERIAL_PORTS):
+            name = ndiDeviceName(port_no)
+            if not name:
+                continue
+            result = ndiProbe(name)
+            if result == NDI_OKAY:
+                break
     if result != NDI_OKAY:
         raise IOError(
             'Could not find any NDI device in '
@@ -26,14 +32,17 @@ if __name__ == '__main__':
             '\t3) Do you have sufficient privilege to connect to '
             'the device? (e.g. on Linux are you part of the "dialout" '
             'group?)'.format(MAX_SERIAL_PORTS)
+        
         )
-
+    print ("probed ok")
+    print ("opening",name)
     device = ndiOpen(name)
     if not device:
         raise IOError(
             'Could not connect to NDI device found on '
             '{}'.format(name)
         )
+    print(ndiGetDeviceName(device))
 
     reply = ndiCommand(device, 'INIT:')
     error = ndiGetError(device)
@@ -47,7 +56,16 @@ if __name__ == '__main__':
         device,
         'COMM:{:d}{:03d}{:d}'.format(NDI_115200, NDI_8N1, NDI_NOHANDSHAKE)
     )
+    ndiCommand("TSTART:")
 
+    # TODO activate GX
+    # time
+    ndiCommand("BX: 1")
+    for i in range(1,10):
+        # port
+        for j in range(0,2):
+            print(ndiGetGXTransform(i,j))
     # Add your own commands here!!!
+    ndiCommand("TSTOP:")
 
     ndiClose(device)

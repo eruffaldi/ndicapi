@@ -67,7 +67,8 @@ int main(int argc, char * argv[])
   else
   {
 #if _MSC_VER >= 1700
-    ParallelProbe(device,argc > 1 ? argv[1]: 0, checkDSR);
+    if(!ParallelProbe(device,argc > 1 ? argv[1]: 0, checkDSR))
+      return -1;
 #else
     {
       const int MAX_SERIAL_PORTS = 20;
@@ -84,18 +85,38 @@ int main(int argc, char * argv[])
 #endif
   }
 
-  if (name != nullptr)
+  if (name != nullptr && !device)
   {
+    std::cout << "openining " << name << std::endl;
     device = ndiOpenSerial(name);
+    if(!device)
+    {
+      std::cerr << "cannot open " << name << std::endl;
+      return -1;
+    }
   }
 
   if (device != nullptr)
   {
-    const char* reply = ndiCommand(device, "INIT:");
+    const char* reply;
+
+    // NOT fundamental
+    reply = ndiCommand(device, 0);
+    if (strncmp(reply, "ERROR", strlen(reply)) == 0 || ndiGetError(device) != NDI_OKAY)
+    {
+      std::cerr << "Error when sending break: " << ndiErrorString(ndiGetError(device)) << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    reply = ndiCommand(device, "INIT:");
     if (strncmp(reply, "ERROR", strlen(reply)) == 0 || ndiGetError(device) != NDI_OKAY)
     {
       std::cerr << "Error when sending command: " << ndiErrorString(ndiGetError(device)) << std::endl;
       return EXIT_FAILURE;
+    }
+    else
+    {
+      std::cout << "reply answered " << reply << std::endl;
     }
 
     reply = ndiCommand(device, "COMM:%d%03d%d", NDI_115200, NDI_8N1, NDI_NOHANDSHAKE);

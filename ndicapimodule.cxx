@@ -25,8 +25,7 @@
   #define PyString_Format PyUnicode_Format
   #define PyString_AsString PyUnicode_AsUTF8
   #define PyIntObject PyLongObject
-  //#define PY_INT_OBJECT_OB_IVAL(ob) PyLong_AsLong((PyObject*)(ob))
-  #define PY_INT_OBJECT_OB_IVAL(ob) ob->ob_digit[0]
+  #define PY_INT_OBJECT_OB_IVAL(ob) PyLong_AsLong((PyObject*)(ob))
   #define cmpfunc PyAsyncMethods*
 #else
   #define MOD_ERROR_VAL
@@ -166,8 +165,8 @@ bitfield_repr(PyIntObject* v)
 static int
 bitfield_compare(PyIntObject* v, PyIntObject* w)
 {
-  register unsigned long i = PY_INT_OBJECT_OB_IVAL(v);
-  register unsigned long j = PY_INT_OBJECT_OB_IVAL(w);
+  register long i = PY_INT_OBJECT_OB_IVAL(v);
+  register long j = PY_INT_OBJECT_OB_IVAL(w);
   return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
@@ -1620,10 +1619,12 @@ ndicapiExport MOD_INIT(ndicapy)
 
   Py_NDIErrcodeMacro(NDI_ENVIRONMENT);
 
-  //Py_NDIErrcodeMacro(NDI_EPROM_READ);
-  //Py_NDIErrcodeMacro(NDI_EPROM_WRITE);
-  //Py_NDIErrcodeMacro(NDI_EPROM_ERASE);
-
+#ifdef NDI_EPROM_READ
+  Py_NDIErrcodeMacro(NDI_EPROM_READ);
+  Py_NDIErrcodeMacro(NDI_EPROM_WRITE);
+  Py_NDIErrcodeMacro(NDI_EPROM_ERASE);
+#endif
+  
   Py_NDIErrcodeMacro(NDI_BAD_CRC);
   Py_NDIErrcodeMacro(NDI_OPEN_ERROR);
   Py_NDIErrcodeMacro(NDI_BAD_COMM);
